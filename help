@@ -1,0 +1,158 @@
+IT STORE INVENTORY  -  setup guide for WAMP
+=============================================
+
+A web database for the IT store: computers, laptops, servers, NAS, L2/L3
+switches, routers, modems, access points, firewalls, network printers,
+printers, scanners, MDF racks, NVRs, CCTV cameras, biometric devices, UPS
+and anything else you add yourself.
+
+Works offline on your office network. No internet connection needed.
+PDF note: PDFs use the standard PDF fonts, which cover English and
+Western European letters. For names in other scripts use Print and
+your browser's "Save as PDF" instead.
+Needs PHP 7.4 or newer and MySQL 5.7+ / MariaDB 10.3+ (any recent WAMP).
+
+
+1. INSTALL
+----------
+1. Unzip and copy the "itstore" folder into WAMP's www folder:
+       C:\wamp64\www\itstore
+2. Start WAMP and wait for the tray icon to turn green.
+3. Only if needed, open  itstore\includes\config.php  in Notepad:
+     - DB_PASS   : your MySQL root password (WAMP default is empty)
+     - DB_PORT   : 3306 for MySQL, usually 3307 for WAMP's MariaDB
+     - ORG_NAME  : your company name (shows on screen and on printouts)
+     - APP_TIMEZONE : your time zone, e.g. 'Asia/Karachi', 'Asia/Kolkata'
+4. Open in the browser:   http://localhost/itstore/install.php
+   Choose the admin username and password and click
+   "Create database and admin". This creates the database "it_store"
+   with 20 ready-made device types and their fields.
+5. DELETE (or rename) install.php after setup.
+6. Sign in at:   http://localhost/itstore/
+
+If you see "pdo_mysql is off": left-click the WAMP tray icon >
+PHP > PHP extensions > tick pdo_mysql.
+
+
+2. OPEN IT FROM OTHER PCs ON THE NETWORK
+----------------------------------------
+By default WAMP only answers on the server PC itself. To let other PCs use
+http://SERVER-IP/itstore/ :
+1. Left-click WAMP tray icon > Apache > httpd-vhosts.conf
+2. In the <VirtualHost *:80> block for localhost, change
+       Require local
+   to
+       Require all granted
+   (or, to allow only your office range:  Require ip 192.168.10 )
+3. Save, then left-click WAMP > Restart All Services.
+4. Allow "Apache HTTP Server" through Windows Defender Firewall
+   (Private networks).
+Find the server's IP with  ipconfig  in a Command Prompt.
+
+
+3. WHO CAN DO WHAT
+------------------
+Admin : everything - add, edit, delete and import equipment, manage users,
+        manage device types and their fields, see the activity log.
+User  : view, search, print, export, add and edit equipment. Cannot
+        delete or import.
+        (To let users delete too, set USERS_CAN_DELETE to true in
+        includes\config.php.)
+Guest : view only - dashboard, equipment list, search and item pages,
+        plus Print and Export (PDF / CSV). Cannot add, edit, delete or
+        import, and cannot change the password (an admin sets it).
+        (To stop guests printing and downloading, set
+        GUESTS_CAN_EXPORT to false in includes\config.php.)
+To create a guest: Users > Add a user > Role: Guest. One shared guest
+account is fine, e.g. username "guest" for auditors or management.
+After 5 wrong passwords an account locks for 10 minutes; an admin can
+unlock it at once by opening the user and clicking "Save user".
+
+
+4. DAILY USE
+------------
+Add equipment     : pick the type (Computer, NVR, CCTV ...) and the form
+                    shows the fields for that type. Asset tags are
+                    numbered automatically (PC-0001, LAP-0001, NVR-0001)
+                    but you can type your own stock number instead.
+Add more detail   : the "Add more detail" button adds extra name/value
+                    rows to any item (warranty, supplier, invoice no ...).
+Save and add a similar one : for a batch of identical PCs - copies make,
+                    model and specs; leaves serial, IP, MAC and user blank.
+Search            : the top search box finds tag, serial, make, model,
+                    IP, MAC, user name, section, grant, remarks and extra
+                    details. Several words narrow the search.
+Print             : the Print button on the Equipment page prints the
+                    list as filtered (A4 landscape). In the print view you
+                    can switch to "all fields" for one type.
+Export            : Export > PDF downloads the filtered list as a PDF.
+                    With one type picked, "PDF with all fields" gives a
+                    block per item with every field.
+                    Export > Excel (CSV) gives every field in a CSV file.
+Item sheet        : open an item and click Print for a single record.
+Warnings          : if a serial number, IP or MAC is already on another
+                    item, you get a warning after saving.
+History           : every change is logged with old and new values.
+                    Deleted items keep their details in the Activity log.
+
+
+5. IMPORT FROM EXCEL (admins)
+-----------------------------
+Equipment > Import loads many items at once from a CSV file.
+1. In Excel: File > Save As > "CSV UTF-8 (Comma delimited)".
+   (A blank template for each type can be downloaded on the Import page.)
+2. Choose the file, the type of equipment (or "Mixed" if the file has a
+   Type column), and what to do when an asset tag already exists:
+   skip the row, or update that item (blank cells keep current values).
+3. Click "Check the file". You see every row: New, Update, No change,
+   Skip or Problem, and how each column was understood. Nothing is
+   saved yet.
+4. Click "Import". Rows with problems are left out; fix and re-import.
+Column names are matched loosely: "Tag No", "Brand", "Serial Number",
+"CPU", "Department", "Room", "Condition", "User", "IP", "MAC" all work.
+Any other column (e.g. "Purchase date", "Supplier") becomes an
+additional detail. Empty Asset tag = numbered automatically.
+A CSV exported from this app can be imported back as it is, so you can
+export, correct values in Excel, and import with "update".
+
+
+6. ADD YOUR OWN DEVICE TYPES AND FIELDS (admins)
+------------------------------------------------
+Device types & fields > open a type to add, edit, reorder or remove its
+fields. Field kinds: text, long text, number, drop-down list, date,
+IP address, MAC address, person. Tick "Show as a column" to see a field
+in that type's list. Tick "Add this field to every device type" to add,
+for example, "Warranty until" everywhere at once.
+To add a new type (Projector, IP Phone, Tablet ...) use the form on the
+right of the Device types page. You can hide a type you don't use.
+
+Status choices (Serviceable / Unserviceable) are set in config.php -
+you can add more, e.g. 'Under repair', 'Condemned'.
+
+
+7. BACKUP  (do this regularly)
+------------------------------
+phpMyAdmin (http://localhost/phpmyadmin) > database it_store > Export > Go.
+Or from a Command Prompt (adjust the MySQL version folder):
+  C:\wamp64\bin\mysql\mysql8.x.x\bin\mysqldump -u root it_store > it_store_backup.sql
+To restore: phpMyAdmin > it_store > Import.
+
+
+8. FILES
+--------
+index.php, login.php, logout.php    sign in / out
+dashboard.php                       counts by type, status and section
+devices.php                         equipment list and filters
+print.php                           print view of the list
+export.php, export_pdf.php          CSV and PDF downloads
+import.php, import_template.php     import from CSV, blank templates
+device_form.php                     add / edit equipment
+device_view.php, device_delete.php  item page, print, delete
+types.php, type_edit.php            device types and their fields
+users.php, profile.php              users, change own password
+activity.php                        activity log
+install.php                         one-time setup (delete after use)
+includes\                           settings and shared code
+                                    (protected from the web by .htaccess)
+assets\                             style sheet, script, icon
+lib\fpdf\                           FPDF library (MIT licence) for PDFs
